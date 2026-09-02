@@ -1,7 +1,7 @@
 from abc import ABC
 
 from domain.task import Task
-from repository.task_repository import TaskRepository
+from data.task_repository import TaskRepository
 
 
 class MockTaskRepository(TaskRepository):

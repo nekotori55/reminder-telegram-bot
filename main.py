@@ -4,7 +4,7 @@ from application.scheduler import Scheduler
 from application.taskapplication import TaskApplication
 from application.print_notificator import PrintNotificator
 from domain.task import Task
-from repository.mock_task_repository import MockTaskRepository
+from data.mock_task_repository import MockTaskRepository
 
 
 async def main():

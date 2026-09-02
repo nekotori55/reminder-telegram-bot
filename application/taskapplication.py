@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from application.notificator import Notificator
 from domain.task import Task
-from repository.task_repository import TaskRepository
+from data.task_repository import TaskRepository
 
 
 class TaskApplication:
