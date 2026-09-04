@@ -3,6 +3,6 @@ from abc import ABC, abstractmethod
 
 from domain.task import Task
 
-class Notificator(ABC):
+class TaskNotificator(ABC):
     @abstractmethod
-    def send_reminder(self, task : Task, now : datetime): ...
+    async def send_reminder(self, task : Task, now : datetime): ...

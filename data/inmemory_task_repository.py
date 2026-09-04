@@ -1,18 +1,20 @@
-from abc import ABC
+from datetime import datetime
 
 from domain.task import Task
-from data.task_repository import TaskRepository
+from application.task_repository import TaskRepository
 
 
-class MockTaskRepository(TaskRepository):
+class InMemoryTaskRepository(TaskRepository):
+
     def __init__(self, initial_tasks=None):
+        self._id_counter = 0
         if initial_tasks is None:
             initial_tasks = []
 
         self._tasks : list[Task] = initial_tasks
 
 
-    def get_tasks(self, filters: TaskRepository.Filter) -> list[Task]:
+    async def get_tasks(self, filters: TaskRepository.Filter) -> list[Task]:
         def task_ok(task : Task) -> bool:
             if filters.was_reminded_about is not None:
                 if filters.was_reminded_about == (task.last_notified_at is None):
@@ -34,11 +36,11 @@ class MockTaskRepository(TaskRepository):
 
         return list(filter(task_ok, self._tasks))
 
-    def get_task(self, id: int) -> Task | None:
-        return next(filter(lambda task : task.owner_id == id, self._tasks), None)
+    async def get_task(self, id: int) -> Task | None:
+        return next(filter(lambda task : task.id == id, self._tasks), None)
 
-    def update_task(self, task: Task) -> bool:
-        updated_task_before = self.get_task(task.id)
+    async def update_task(self, task: Task) -> bool:
+        updated_task_before = await self.get_task(task.id)
 
         if updated_task_before is None:
             return False
@@ -48,7 +50,10 @@ class MockTaskRepository(TaskRepository):
 
         return True
 
-
-    def add_task(self, task: Task) -> int | None:
+    async def add_task(self, name: str, deadline: datetime, owner_id: int) -> int | None:
+        self._id_counter += 1
+        task : Task = Task(id=self._id_counter, owner_id=owner_id, deadline=deadline, name=name)
         self._tasks.append(task)
-        pass
+
+        return task.id
+
