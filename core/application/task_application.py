@@ -1,9 +1,9 @@
 import asyncio
 from datetime import datetime, timedelta
 
-from application.task_notificator import TaskNotificator
-from domain.task import Task
-from application.task_repository import TaskRepository
+from core.application.task_notificator import TaskNotificator
+from core.domain.task import Task
+from core.application.task_repository import TaskRepository
 
 
 class TaskApplication:
@@ -21,12 +21,6 @@ class TaskApplication:
         )
 
         tasks: list[Task] = await self._repository.get_tasks(filter)
-
-        for task in tasks:
-            await self._notificator.send_reminder(task, now)
-            task.last_notified_at = now
-            await self._repository.update_task(task)
-
 
         # Parallel process reminders
         await asyncio.gather(

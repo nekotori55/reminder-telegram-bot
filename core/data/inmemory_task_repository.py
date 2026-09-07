@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from domain.task import Task
-from application.task_repository import TaskRepository
+from core.domain.task import Task
+from core.application.task_repository import TaskRepository
 
 
 class InMemoryTaskRepository(TaskRepository):

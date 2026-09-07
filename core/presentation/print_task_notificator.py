@@ -1,7 +1,7 @@
 import datetime
 
-from application.task_notificator import TaskNotificator
-from domain.task import Task
+from core.application.task_notificator import TaskNotificator
+from core.domain.task import Task
 
 
 class PrintTaskNotificator(TaskNotificator):

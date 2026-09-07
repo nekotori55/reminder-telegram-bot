@@ -1,11 +1,11 @@
-from presentation.telegram_bot import TelegramBot
+from core.presentation.telegram_task_notificator import TelegramTaskNotificator
+from bot.telegram_bot import TelegramBot
 from dotenv import load_dotenv
 import os
 import asyncio
 from util.scheduler import Scheduler
-from application.task_application import TaskApplication
-from presentation.print_task_notificator import PrintTaskNotificator
-from data.inmemory_task_repository import InMemoryTaskRepository
+from core.application.task_application import TaskApplication
+from core.data.inmemory_task_repository import InMemoryTaskRepository
 
 
 
@@ -20,8 +20,11 @@ async def main():
 
     # Init application components
     repository = InMemoryTaskRepository()
-    notificator = PrintTaskNotificator()
-    application = TaskApplication(task_repository=repository, notificator=tg_bot)
+
+    # notificator = PrintTaskNotificator()
+    notificator = TelegramTaskNotificator(tg_bot)
+
+    application = TaskApplication(task_repository=repository, notificator=notificator)
 
     await tg_bot.initialize(application)
 

@@ -27,5 +27,5 @@ class Scheduler:
 
     async def _timer_func(self):
         while self._enabled:
-            await self._callback()
             await asyncio.sleep(self._period_seconds)
+            await self._callback()
