@@ -1,5 +1,8 @@
 import asyncio
+import logging
 from typing import Callable, Awaitable, Any
+
+logger = logging.getLogger(__name__)
 
 # TODO make it wait not for N seconds, but run every N real seconds
 class Scheduler:
@@ -12,13 +15,13 @@ class Scheduler:
 
     def start(self):
        self._enabled = True
-       print("starting scheduling")
+       logger.info("Scheduler started")
 
        self._timer_task = asyncio.create_task(self._timer_func())
 
 
     def stop(self):
-        print("stopping scheduling")
+        logger.info("Scheduler stopped")
 
         self._enabled = False
         if self._timer_task is not None:

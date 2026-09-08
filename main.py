@@ -1,3 +1,5 @@
+import logging
+
 from bot.task_notify_module import TaskNotifyModule
 from bot.task_conv_module import TaskConvModule
 from telegram.ext import Application
@@ -10,15 +12,22 @@ from util.scheduler import Scheduler
 from core.application.task_application import TaskApplication
 from core.data.inmemory_task_repository import InMemoryTaskRepository
 
+load_dotenv()
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
 
 
 async def main():
-    load_dotenv()
     TOKEN = os.getenv("TOKEN")
 
     if TOKEN is None or len(TOKEN) == 0:
         raise EnvironmentError("TOKEN environment variable is empty")
-
 
     # pass builders through modules to attach their build configuration
     bot_builder = Application.builder().token(TOKEN)
@@ -47,7 +56,6 @@ async def main():
     # Setup and start scheduler that calls callback every n seconds
     # that checks if some tasks need to be notified about
     scheduler = Scheduler(5, application.process_reminders)
-
 
     # Start tg bot
     await tg_bot.initialize()

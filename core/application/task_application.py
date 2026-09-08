@@ -1,10 +1,12 @@
 import asyncio
+import logging
 from datetime import datetime, timedelta
 
 from core.application.task_notificator import TaskNotificator
 from core.domain.task import Task
 from core.application.task_repository import TaskRepository
 
+logger = logging.getLogger(__name__)
 
 class TaskApplication:
     def __init__(self, task_repository: TaskRepository, notificator: TaskNotificator):
@@ -22,6 +24,8 @@ class TaskApplication:
 
         tasks: list[Task] = await self._repository.get_tasks(filter)
 
+        logger.info(f"Sending reminders for {len(tasks)} tasks...")
+
         # Parallel process reminders
         await asyncio.gather(
             *(self._process_one_reminder(now, task) for task in tasks)
@@ -29,15 +33,18 @@ class TaskApplication:
 
 
     async def add_task(self, name : str, deadline: datetime, owner_id : int) -> int | None:
-        await self._repository.add_task(name, deadline, owner_id)
+        new_task_id = await self._repository.add_task(name, deadline, owner_id)
+        logger.info(f"Added new task with id {new_task_id}, name {name}, deadline {deadline}")
+        return new_task_id
 
     async def get_non_due_tasks(self, owner_id : int) -> list[Task]:
         filters = TaskRepository.Filter(
             owner_id=owner_id,
             status=Task.Status.NOT_DONE
         )
-        return await self._repository.get_tasks(filters)
-
+        tasks = await self._repository.get_tasks(filters)
+        logger.info(f"Returning requested {len(tasks)} tasks of user {owner_id}")
+        return tasks
 
 
     def _get_now(self) -> datetime:

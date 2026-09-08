@@ -1,14 +1,19 @@
+from cmath import log
+import logging
+from time import strptime
 from core.application.task_application import TaskApplication
-from datetime import datetime
+from datetime import datetime, date, time
 
 from enum import IntEnum
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, Application, ConversationHandler, CommandHandler, MessageHandler, \
-    ContextTypes, CallbackContext
+    ContextTypes, filters
 
 from bot.telegram_module import TelegramModule
 from core.domain.task import Task
+
+logger = logging.getLogger(__name__)
 
 
 class ConvState(IntEnum):
@@ -24,7 +29,7 @@ class TaskConvModule(TelegramModule):
     def attach_module_build_deps(builder: ApplicationBuilder) -> ApplicationBuilder:
         return builder
 
-    def __init__(self, bot: Application, task_app : TaskApplication):
+    def __init__(self, bot: Application, task_app: TaskApplication):
         self._task_app = task_app
 
         add_conv_handler = ConversationHandler(
@@ -33,13 +38,13 @@ class TaskConvModule(TelegramModule):
             ],  # ty: ignore[invalid-argument-type]
             states={
                 ConvState.ADD_TASK_NAME: [
-                    MessageHandler(None, self._add_task_name)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self._add_task_name)
                 ],
                 ConvState.ADD_TASK_DEADLINE_DATE: [
-                    MessageHandler(None, self._add_task_deadline_date)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self._add_task_deadline_date)
                 ],
                 ConvState.ADD_TASK_DEADLINE_TIME: [
-                    MessageHandler(None, self._add_task_deadline_time)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self._add_task_deadline_time)
                 ],
             },  # ty: ignore[invalid-argument-type]
             fallbacks=[CommandHandler("cancel", self._add_task_cancel)]  # ty: ignore[invalid-argument-type]
@@ -49,10 +54,11 @@ class TaskConvModule(TelegramModule):
         bot.add_handler(CommandHandler("start", self._start))
         bot.add_handler(CommandHandler("list", self._list_tasks))
 
-
     async def _add_task(self, update: Update, context):
         if update.message is None:
-            raise Exception("Unknown owner_id")
+            return None
+
+        logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} initiated task addition")  # ty: ignore[unresolved-attribute]
 
         await update.message.reply_text(
             "Please, fill the info about the reminder"
@@ -65,71 +71,109 @@ class TaskConvModule(TelegramModule):
 
     async def _add_task_name(self, update: Update, context):
         if update.message is None or context.user_data is None:
-            raise Exception("Network Error")
+            return None
+
+        if update.message.text is None or len(update.message.text.strip()) == 0:
+            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task name")  # ty: ignore[unresolved-attribute]
+            await update.message.reply_text("Task name can not be empty")
+            return ConvState.ADD_TASK_NAME
 
         context.user_data["new_task_name"] = update.message.text
 
-        await update.message.reply_text(
-            "Please, send the deadline date in format DD-MM-YYYY"
-        )
-
+        logger.info(
+            f"User {update.effective_user.name} with id {update.effective_user.id} entered new task name")  # ty: ignore[unresolved-attribute]
+        await update.message.reply_text("Please, send the deadline date in format DD-MM-YYYY")
         return ConvState.ADD_TASK_DEADLINE_DATE
 
     async def _add_task_deadline_date(self, update: Update, context):
-        if update.message is None or context.user_data is None or update.message.text is None:
-            raise Exception("Network Error")
+        if update.message is None or context.user_data is None:
+            return None
 
-        raw_date = update.message.text
+        if update.message.text is None or len(update.message.text.strip()) == 0:
+            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task date")  # ty: ignore[unresolved-attribute]
+            await update.message.reply_text("Please, send the deadline date in format DD-MM-YYYY, or /cancel")
+            return ConvState.ADD_TASK_DEADLINE_DATE
 
-        context.user_data["new_task_deadline_date"] = datetime.strptime(raw_date, "%d-%m-%Y").date()
+        try:
+            parsed_date: date = datetime.strptime(update.message.text, "%d-%m-%Y").date()
+        except:
+            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task date")  # ty: ignore[unresolved-attribute]
+            await update.message.reply_text("Error. Incorrect format, please use DD-MM-YYYY format, or /cancel")
+            return ConvState.ADD_TASK_DEADLINE_DATE
 
-        await update.message.reply_text(
-            "Please, send the deadline time in format H:M"
-        )
-
+        context.user_data["new_task_deadline_date"] = parsed_date
+        logger.info(
+            f"User {update.effective_user.name} with id {update.effective_user.id} entered new task date")  # ty: ignore[unresolved-attribute]
+        await update.message.reply_text("Please, send the deadline time in format H:M")
         return ConvState.ADD_TASK_DEADLINE_TIME
 
     async def _add_task_deadline_time(self, update: Update, context):
-        if update.message is None or context.user_data is None or update.message.text is None or update.effective_user is None:
-            raise Exception("Network Error")
+        if update.message is None or context.user_data is None or update.effective_user is None:
+            return None
 
-        raw_time = update.message.text
+        if update.message.text is None or len(update.message.text.strip()) == 0:
+            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task time")  # ty: ignore[unresolved-attribute]
+            await update.message.reply_text("Please, send the deadline date in format H:M, or /cancel")
+            return ConvState.ADD_TASK_DEADLINE_TIME
 
-        date = context.user_data["new_task_deadline_date"]
-        time = datetime.strptime(raw_time, "%H:%M").time()
+        try:
+            parsed_time: time = datetime.strptime(update.message.text, "%H:%M").time()
+        except:
+            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task time")  # ty: ignore[unresolved-attribute]
+            await update.message.reply_text("Error. Incorrect format, please use H:M format, or /cancel")
+            return ConvState.ADD_TASK_DEADLINE_TIME
+
+        parsed_date: date = context.user_data["new_task_deadline_date"]
 
         deadline = datetime.combine(
-            date,
-            time
+            parsed_date,
+            parsed_time
         )
 
-        await self._task_app.add_task(
+        logger.info(
+            f"User {update.effective_user.name} with id {update.effective_user.id} entered new task time")  # ty: ignore[unresolved-attribute]
+
+
+        new_task_id = await self._task_app.add_task(
             name=context.user_data["new_task_name"],
             deadline=deadline,
             owner_id=update.effective_user.id
         )
 
+        if new_task_id is None:
+            logger.error(
+                f"User {update.effective_user.name} with id {update.effective_user.id} failed adding new task")  # ty: ignore[unresolved-attribute]
+            await update.message.reply_text("Unknown error adding the task")
+            return None
+
+        logger.info(
+            f"User {update.effective_user.name} with id {update.effective_user.id} successfully added new task with id {new_task_id}")  # ty: ignore[unresolved-attribute]
         await update.message.reply_text(
-            "Successfully added task!"
+            "Successfully added task! Use /list to see"
         )
 
         return ConvState.END
 
     async def _add_task_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if update.message is None:
-            raise Exception("Network Error")
+        if update.message is None or context.user_data is None or update.effective_user is None:
+            return None
 
-        await update.message.reply_text(
-            "Adding new task has been canceled"
-        )
+        context.user_data["new_task_name"] = None
+        context.user_data["new_task_deadline_date"] = None
 
+        logger.info(
+            f"User {update.effective_user.name} with id {update.effective_user.id} canceled adding new task")  # ty: ignore[unresolved-attribute]
+        await update.message.reply_text("Adding new task has been canceled")
         return ConvState.END
 
-
     async def _list_tasks(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        tasks = await self._task_app.get_non_due_tasks(update.effective_user.id)  # ty: ignore[unresolved-attribute]
+        if update.message is None or context.user_data is None:
+            return None
 
-        def task_to_str(task : Task) -> str:
+        logger.info(
+            f"User {update.effective_user.name} with id {update.effective_user.id} requested their task list")  # ty: ignore[unresolved-attribute]
+
+        def task_to_str(task: Task) -> str:
             info = [
                 "`ID:`", str(task.id),
                 "`Name:`", task.name,
@@ -137,17 +181,20 @@ class TaskConvModule(TelegramModule):
             ]
             return "\n".join(info)
 
-        text = '\n\n'.join(list(map(task_to_str, tasks)))
+        tasks = await self._task_app.get_non_due_tasks(update.effective_user.id)  # ty: ignore[unresolved-attribute]
 
-        if len(text) == 0:
-            text = "You have no pending tasks! Good Job!"
+        if len(tasks) == 0:
+            await update.message.reply_text("You have no pending tasks! Good Job!")
+            return None
 
-        if update.message is not None:
-            await update.message.reply_markdown(text=text)
-
+        reply = '\n\n'.join(list(map(task_to_str, tasks)))
+        await update.message.reply_markdown(text=reply)
+        return None
 
     async def _start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if update.message is not None:
+            logger.info(
+                f"User {update.effective_user.name} with id {update.effective_user.id} used /start")  # ty: ignore[unresolved-attribute]
             await update.message.reply_text(
                 "This is the simple reminder bot!\n"
                 "To add a task use /add command.\n"
