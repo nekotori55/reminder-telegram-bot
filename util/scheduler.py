@@ -20,12 +20,13 @@ class Scheduler:
        self._timer_task = asyncio.create_task(self._timer_func())
 
 
-    def stop(self):
+    async def stop(self):
         logger.info("Scheduler stopped")
 
         self._enabled = False
         if self._timer_task is not None:
            self._timer_task.cancel()
+           await self._timer_task
 
 
     async def _timer_func(self):

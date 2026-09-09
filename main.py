@@ -1,3 +1,4 @@
+from telegram.error import InvalidToken
 import logging
 
 from bot.task_notify_module import TaskNotifyModule
@@ -27,7 +28,8 @@ async def main():
     TOKEN = os.getenv("TOKEN")
 
     if TOKEN is None or len(TOKEN) == 0:
-        raise EnvironmentError("TOKEN environment variable is empty")
+        logger.critical("TOKEN environment variable is not configured")
+        raise RuntimeError("TOKEN environment variable is not configured")
 
     # pass builders through modules to attach their build configuration
     bot_builder = Application.builder().token(TOKEN)
@@ -57,20 +59,38 @@ async def main():
     # that checks if some tasks need to be notified about
     scheduler = Scheduler(5, application.process_reminders)
 
-    # Start tg bot
-    await tg_bot.initialize()
-    await tg_bot.updater.start_polling()  # ty: ignore[unresolved-attribute]
-    await tg_bot.start()
+    try:
+        # Start tg bot
+        await tg_bot.initialize()
+        await tg_bot.updater.start_polling()  # ty: ignore[unresolved-attribute]
+        await tg_bot.start()
 
-    # Start scheduler
-    scheduler.start()
+        # Start scheduler
+        scheduler.start()
 
-    # TODO gracefully shutdown
-    await asyncio.Event().wait()
+        await asyncio.Event().wait()
+    except InvalidToken:
+        logger.critical("Error! Invalid telegram TOKEN")
+        raise
+    finally:
+        logger.info("Trying to shutdown gracefully...")
 
-    await scheduler.stop()
-    await tg_bot.stop()
+        await scheduler.stop()
+
+        if tg_bot.running:
+            await tg_bot.stop()
+
+        if tg_bot.updater.running:  # ty: ignore[unresolved-attribute]
+            await tg_bot.updater.stop()  # ty: ignore[unresolved-attribute]
+
+        await tg_bot.shutdown()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Shutdown by user (CTRL + C)")
+    except Exception:
+        logger.exception("Fatal error while running the bot")
+        raise
