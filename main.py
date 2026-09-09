@@ -25,11 +25,17 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    TOKEN = os.getenv("TOKEN")
+    token_tg_file = os.getenv("TG_TOKEN_FILE")
 
-    if TOKEN is None or len(TOKEN) == 0:
-        logger.critical("TOKEN environment variable is not configured")
-        raise RuntimeError("TOKEN environment variable is not configured")
+    if token_tg_file is None or len(token_tg_file) == 0:
+        logger.critical("TG_TOKEN_FILE environment variable is not configured")
+        raise RuntimeError("TG_TOKEN_FILE environment variable is not configured")
+
+    with open(token_tg_file, "r") as file:
+        TOKEN = file.read().strip()
+
+    logger.info("Initializing...")
+
 
     # pass builders through modules to attach their build configuration
     bot_builder = Application.builder().token(TOKEN)
@@ -60,8 +66,10 @@ async def main():
     scheduler = Scheduler(120, application.process_reminders)
 
     try:
-        # Start tg bot
+        # Start tg bots
         await tg_bot.initialize()
+
+        logger.info("Initialized successfully... Starting...")
         await tg_bot.updater.start_polling()  # ty: ignore[unresolved-attribute]
         await tg_bot.start()
 

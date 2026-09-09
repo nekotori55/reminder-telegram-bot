@@ -1,0 +1,6 @@
+.venv/
+.env
+.idea
+.gitignore
+
+tg_token.txt

@@ -1,0 +1,13 @@
+services:
+  reminder-bot:
+    build:
+      context: .
+    secrets:
+      - tg_token
+    environment:
+      TG_TOKEN_FILE: /run/secrets/tg_token
+
+secrets:
+  tg_token:
+    file:
+      tg_token.txt
