@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -6,6 +7,7 @@ from telegram.ext import ApplicationBuilder, Application, ContextTypes, Callback
 from bot.telegram_module import TelegramModule
 from core.domain.task import Task
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ReminderUpdate:
@@ -51,6 +53,7 @@ class TaskNotifyModule(TelegramModule):
         seconds_before_deadline = (task.deadline - now).total_seconds()
         min, sec = divmod(seconds_before_deadline, 60)
 
-        message = f"Task {task.name} is due in {min} min {sec} sec"
+        message = f"Task {task.name} is due at {task.deadline.time()} (in {int(min)} min {int(sec)} sec)"
 
+        logger.info("Sending reminder for task id %s for user %s", task.id, task.owner_id)
         await context.bot.send_message(chat_id, message)

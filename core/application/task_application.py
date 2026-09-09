@@ -24,7 +24,7 @@ class TaskApplication:
 
         tasks: list[Task] = await self._repository.get_tasks(filter)
 
-        logger.info(f"Sending reminders for {len(tasks)} tasks...")
+        logger.info("Sending reminders for %s tasks...", len(tasks))
 
         # Parallel process reminders
         await asyncio.gather(
@@ -34,7 +34,7 @@ class TaskApplication:
 
     async def add_task(self, name : str, deadline: datetime, owner_id : int) -> int | None:
         new_task_id = await self._repository.add_task(name, deadline, owner_id)
-        logger.info(f"Added new task with id {new_task_id}, name {name}, deadline {deadline}")
+        logger.info(f"Added new task with id %s, name %s, deadline %s", new_task_id, name, deadline)
         return new_task_id
 
     async def get_non_due_tasks(self, owner_id : int) -> list[Task]:
@@ -43,7 +43,7 @@ class TaskApplication:
             status=Task.Status.NOT_DONE
         )
         tasks = await self._repository.get_tasks(filters)
-        logger.info(f"Returning requested {len(tasks)} tasks of user {owner_id}")
+        logger.info(f"Returning requested %s tasks of user %s", len(tasks), owner_id)
         return tasks
 
 

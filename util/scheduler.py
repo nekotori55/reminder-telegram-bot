@@ -15,7 +15,7 @@ class Scheduler:
 
     def start(self):
        self._enabled = True
-       logger.info("Scheduler started")
+       logger.info("Scheduler started. Running callback every %s seconds", self._period_seconds)
 
        self._timer_task = asyncio.create_task(self._timer_func())
 

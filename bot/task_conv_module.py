@@ -58,7 +58,7 @@ class TaskConvModule(TelegramModule):
         if update.message is None:
             return None
 
-        logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} initiated task addition")  # ty: ignore[unresolved-attribute]
+        logger.info("User %s with id %s initiated task addition", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
 
         await update.message.reply_text(
             "Please, fill the info about the reminder"
@@ -74,14 +74,14 @@ class TaskConvModule(TelegramModule):
             return None
 
         if update.message.text is None or len(update.message.text.strip()) == 0:
-            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task name")  # ty: ignore[unresolved-attribute]
+            logger.info("User %s with id %s entered invalid new task name", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text("Task name can not be empty")
             return ConvState.ADD_TASK_NAME
 
         context.user_data["new_task_name"] = update.message.text
 
         logger.info(
-            f"User {update.effective_user.name} with id {update.effective_user.id} entered new task name")  # ty: ignore[unresolved-attribute]
+            "User %s with id %s entered new task name", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
         await update.message.reply_text("Please, send the deadline date in format DD-MM-YYYY")
         return ConvState.ADD_TASK_DEADLINE_DATE
 
@@ -90,20 +90,20 @@ class TaskConvModule(TelegramModule):
             return None
 
         if update.message.text is None or len(update.message.text.strip()) == 0:
-            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task date")  # ty: ignore[unresolved-attribute]
+            logger.info("User %s with id %s entered invalid new task date", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text("Please, send the deadline date in format DD-MM-YYYY, or /cancel")
             return ConvState.ADD_TASK_DEADLINE_DATE
 
         try:
             parsed_date: date = datetime.strptime(update.message.text, "%d-%m-%Y").date()
         except:
-            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task date")  # ty: ignore[unresolved-attribute]
+            logger.info("User %s with id %s entered invalid new task date",update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text("Error. Incorrect format, please use DD-MM-YYYY format, or /cancel")
             return ConvState.ADD_TASK_DEADLINE_DATE
 
         context.user_data["new_task_deadline_date"] = parsed_date
         logger.info(
-            f"User {update.effective_user.name} with id {update.effective_user.id} entered new task date")  # ty: ignore[unresolved-attribute]
+            f"User %s with id %s entered new task date", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
         await update.message.reply_text("Please, send the deadline time in format H:M")
         return ConvState.ADD_TASK_DEADLINE_TIME
 
@@ -112,14 +112,14 @@ class TaskConvModule(TelegramModule):
             return None
 
         if update.message.text is None or len(update.message.text.strip()) == 0:
-            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task time")  # ty: ignore[unresolved-attribute]
+            logger.info("User %s with id %s entered invalid new task time", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text("Please, send the deadline date in format H:M, or /cancel")
             return ConvState.ADD_TASK_DEADLINE_TIME
 
         try:
             parsed_time: time = datetime.strptime(update.message.text, "%H:%M").time()
         except:
-            logger.info(f"User {update.effective_user.name} with id {update.effective_user.id} entered invalid new task time")  # ty: ignore[unresolved-attribute]
+            logger.info("User %s with id %s entered invalid new task time", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text("Error. Incorrect format, please use H:M format, or /cancel")
             return ConvState.ADD_TASK_DEADLINE_TIME
 
@@ -131,7 +131,7 @@ class TaskConvModule(TelegramModule):
         )
 
         logger.info(
-            f"User {update.effective_user.name} with id {update.effective_user.id} entered new task time")  # ty: ignore[unresolved-attribute]
+            "User %s with id %s entered new task time", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
 
 
         new_task_id = await self._task_app.add_task(
@@ -142,12 +142,12 @@ class TaskConvModule(TelegramModule):
 
         if new_task_id is None:
             logger.error(
-                f"User {update.effective_user.name} with id {update.effective_user.id} failed adding new task")  # ty: ignore[unresolved-attribute]
+                "User %s with id %s failed adding new task", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text("Unknown error adding the task")
             return None
 
         logger.info(
-            f"User {update.effective_user.name} with id {update.effective_user.id} successfully added new task with id {new_task_id}")  # ty: ignore[unresolved-attribute]
+            "User %s with id %s successfully added new task with id %s", update.effective_user.name, update.effective_user.id, new_task_id)  # ty: ignore[unresolved-attribute]
         await update.message.reply_text(
             "Successfully added task! Use /list to see"
         )
@@ -162,7 +162,7 @@ class TaskConvModule(TelegramModule):
         context.user_data["new_task_deadline_date"] = None
 
         logger.info(
-            f"User {update.effective_user.name} with id {update.effective_user.id} canceled adding new task")  # ty: ignore[unresolved-attribute]
+            "User %s with id %s canceled adding new task", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
         await update.message.reply_text("Adding new task has been canceled")
         return ConvState.END
 
@@ -171,13 +171,13 @@ class TaskConvModule(TelegramModule):
             return None
 
         logger.info(
-            f"User {update.effective_user.name} with id {update.effective_user.id} requested their task list")  # ty: ignore[unresolved-attribute]
+            "User %s with id %s requested their task list", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
 
         def task_to_str(task: Task) -> str:
             info = [
                 "`ID:`", str(task.id),
                 "`Name:`", task.name,
-                "`Deadline:`", task.deadline.time().strftime("%H:%M"), task.deadline.date().strftime("%d-%d-%Y")
+                "`Deadline:`", task.deadline.time().strftime("%H:%M"), task.deadline.date().strftime("%d-%m-%Y")
             ]
             return "\n".join(info)
 
@@ -194,7 +194,7 @@ class TaskConvModule(TelegramModule):
     async def _start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if update.message is not None:
             logger.info(
-                f"User {update.effective_user.name} with id {update.effective_user.id} used /start")  # ty: ignore[unresolved-attribute]
+                "User %s with id %s used /start", update.effective_user.name, update.effective_user.id)  # ty: ignore[unresolved-attribute]
             await update.message.reply_text(
                 "This is the simple reminder bot!\n"
                 "To add a task use /add command.\n"
