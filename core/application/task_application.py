@@ -1,6 +1,8 @@
+from operator import ge
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from typing import Callable
 
 from core.application.task_notificator import TaskNotificator
 from core.domain.task import Task
@@ -9,15 +11,17 @@ from core.application.task_repository import TaskRepository
 logger = logging.getLogger(__name__)
 
 class TaskApplication:
-    def __init__(self, task_repository: TaskRepository, notificator: TaskNotificator):
+    def __init__(self, task_repository: TaskRepository, notificator: TaskNotificator, get_time_callback : Callable[[], datetime] = datetime.now):
         self._repository = task_repository
         self._notificator = notificator
+        self._get_time_callback : Callable[[], datetime] = get_time_callback
 
     async def process_reminders(self):
         now: datetime = self._get_now()
 
         filter: TaskRepository.Filter = TaskRepository.Filter(
             was_reminded_about=False,
+            status=Task.Status.NOT_DONE,
             deadline_after=now,
             deadline_before=now + timedelta(minutes=15)
         )
@@ -33,6 +37,10 @@ class TaskApplication:
 
 
     async def add_task(self, name : str, deadline: datetime, owner_id : int) -> int | None:
+        if deadline < self._get_now():
+            logger.info(f"Failed adding new task with name %s, deadline %s (deadline cant be in the past)",  name, deadline)
+            return None
+
         new_task_id = await self._repository.add_task(name, deadline, owner_id)
         logger.info(f"Added new task with id %s, name %s, deadline %s", new_task_id, name, deadline)
         return new_task_id
@@ -40,7 +48,8 @@ class TaskApplication:
     async def get_non_due_tasks(self, owner_id : int) -> list[Task]:
         filters = TaskRepository.Filter(
             owner_id=owner_id,
-            status=Task.Status.NOT_DONE
+            status=Task.Status.NOT_DONE,
+            deadline_after=self._get_now()
         )
         tasks = await self._repository.get_tasks(filters)
         logger.info(f"Returning requested %s tasks of user %s", len(tasks), owner_id)
@@ -64,7 +73,7 @@ class TaskApplication:
 
 
     def _get_now(self) -> datetime:
-        return datetime.now()
+        return self._get_time_callback()
 
 
     async def _process_one_reminder(self, now: datetime, task: Task):
