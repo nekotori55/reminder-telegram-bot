@@ -57,7 +57,7 @@ async def main():
 
     # Setup and start scheduler that calls callback every n seconds
     # that checks if some tasks need to be notified about
-    scheduler = Scheduler(5, application.process_reminders)
+    scheduler = Scheduler(120, application.process_reminders)
 
     try:
         # Start tg bot

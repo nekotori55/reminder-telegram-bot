@@ -46,6 +46,22 @@ class TaskApplication:
         logger.info(f"Returning requested %s tasks of user %s", len(tasks), owner_id)
         return tasks
 
+    async def mark_task_as_done(self, task_id : int, owner_id : int) -> int | None:
+        edited_task : Task | None = await self._repository.get_task(task_id)
+
+        if edited_task is not None:
+            if edited_task.owner_id != owner_id:
+                logger.warning("User %s tried editing task %s that is not his", owner_id, task_id)
+                return None
+
+            logger.info("Marking task %s as DONE", task_id)
+            edited_task.status = Task.Status.DONE
+            success = await self._repository.update_task(edited_task)
+            return edited_task.id if success else None
+        else:
+            logger.info("Updating task %s failed. Id not found", task_id)
+            return None
+
 
     def _get_now(self) -> datetime:
         return datetime.now()
